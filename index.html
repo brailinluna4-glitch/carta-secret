@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CartaSecreta — Cartas Digitales con QR</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rose: #c85a7a;
+    --rose-light: #f5d6e0;
+    --rose-dark: #8c3a55;
+    --cream: #fdf8f2;
+    --cream-dark: #f0e8dc;
+    --ink: #1a1015;
+    --ink-muted: #6b5260;
+    --gold: #c9a84c;
+    --gold-light: #f5edcc;
+    --white: #ffffff;
+    --shadow: 0 4px 24px rgba(200,90,122,0.12);
+    --shadow-lg: 0 12px 48px rgba(200,90,122,0.18);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background pattern */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      radial-gradient(circle at 20% 20%, rgba(200,90,122,0.07) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(201,168,76,0.07) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 3rem 1.5rem 2rem;
+    border-bottom: 1px solid rgba(200,90,122,0.15);
+    background: linear-gradient(180deg, rgba(245,214,224,0.4) 0%, transparent 100%);
+  }
+
+  .logo-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--rose);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 28px;
+    box-shadow: var(--shadow);
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+
+  header h1 span { color: var(--rose); font-style: italic; }
+
+  header p {
+    margin-top: 0.5rem;
+    color: var(--ink-muted);
+    font-size: 1rem;
+    font-weight: 300;
+  }
+
+  /* ── NAV TABS ── */
+  .tabs {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.5rem 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tab-btn {
+    padding: 0.6rem 1.6rem;
+    border-radius: 100px;
+    border: 1.5px solid var(--rose-light);
+    background: var(--white);
+    color: var(--ink-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .tab-btn:hover { border-color: var(--rose); color: var(--rose); }
+
+  .tab-btn.active {
+    background: var(--rose);
+    border-color: var(--rose);
+    color: var(--white);
+    box-shadow: 0 4px 12px rgba(200,90,122,0.3);
+  }
+
+  /* ── MAIN CONTENT ── */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0 1.25rem 4rem;
+  }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    border: 1px solid rgba(200,90,122,0.1);
+    margin-bottom: 1.5rem;
+  }
+
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    margin-bottom: 1.25rem;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .card-title .icon { font-size: 1.1rem; }
+
+  /* ── FORM ELEMENTS ── */
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink-muted);
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  input[type="text"],
+  input[type="file"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid rgba(200,90,122,0.2);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--ink);
+    background: var(--cream);
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 1.2rem;
+  }
+
+  input[type="text"]:focus,
+  textarea:focus { border-color: var(--rose); background: var(--white); }
+
+  textarea {
+    min-height: 160px;
+    resize: vertical;
+    line-height: 1.7;
+  }
+
+  .field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 520px) {
+    .field-row { grid-template-columns: 1fr; }
+  }
+
+  /* ── THEME PICKER ── */
+  .themes {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.2rem;
+  }
+
+  .theme-btn {
+    padding: 0.45rem 1rem;
+    border-radius: 100px;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    background: var(--cream);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .theme-btn.active, .theme-btn:hover {
+    border-color: var(--rose);
+    background: var(--rose-light);
+    color: var(--rose-dark);
+    font-weight: 500;
+  }
+
+  /* ── MEDIA PREVIEW ── */
+  .media-zone {
+    border: 2px dashed rgba(200,90,122,0.25);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 1.2rem;
+    background: var(--cream);
+  }
+
+  .media-zone:hover { border-color: var(--rose); background: var(--rose-light); }
+  .media-zone p { color: var(--ink-muted); font-size: 0.9rem; }
+  .media-zone .media-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .preview-img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid var(--rose-light);
+  }
+
+  .remove-btn {
+    background: var(--rose);
+    color: white;
+    border: none;
+    border-radius: 100px;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 4px;
+    right: 4px;
+  }
+
+  .preview-wrap { position: relative; display: inline-block; width: 100%; }
+
+  /* ── MUSIC PICKER ── */
+  .music-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.5rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .music-btn {
+    padding: 0.6rem 0.75rem;
+    border-radius: 10px;
+    border: 1.5px solid rgba(200,90,122,0.2);
+    background: var(--cream);
+    font-size: 0.82rem;
+    cursor: pointer;
+    text-align: left;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+    color: var(--ink);
+  }
+
+  .music-btn:hover, .music-btn.active {
+    border-color: var(--rose);
+    background: var(--rose-light);
+    color: var(--rose-dark);
+  }
+
+  .music-btn .note { margin-right: 0.3rem; }
+
+  /* ── PRIMARY BUTTON ── */
+  .btn-primary {
+    width: 100%;
+    padding: 1rem;
+    background: var(--rose);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-style: italic;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(200,90,122,0.35);
+    letter-spacing: 0.01em;
+  }
+
+  .btn-primary:hover {
+    background: var(--rose-dark);
+    box-shadow: 0 6px 24px rgba(200,90,122,0.45);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-secondary {
+    padding: 0.7rem 1.5rem;
+    background: transparent;
+    color: var(--rose);
+    border: 1.5px solid var(--rose);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+  }
+
+  .btn-secondary:hover { background: var(--rose-light); }
+
+  /* ── QR RESULT ── */
+  .result-section {
+    display: none;
+    margin-top: 1.5rem;
+  }
+
+  .result-section.show { display: block; }
+
+  .qr-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 2.5rem;
+    background: linear-gradient(135deg, var(--rose-light) 0%, var(--gold-light) 100%);
+    border-radius: 20px;
+    text-align: center;
+    border: 1px solid rgba(200,90,122,0.15);
+  }
+
+  .qr-wrapper h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--ink);
+  }
+
+  .qr-wrapper p { color: var(--ink-muted); font-size: 0.9rem; max-width: 340px; }
+
+  #qr-container {
+    background: white;
+    padding: 16px;
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    border: 3px solid var(--rose-light);
+  }
+
+  .link-box {
+    background: var(--white);
+    border: 1.5px solid rgba(200,90,122,0.2);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+    color: var(--rose-dark);
+    font-family: monospace;
+    word-break: break-all;
+    max-width: 360px;
+    cursor: pointer;
+  }
+
+  .action-row {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* ── LETTER VIEW ── */
+  #view-carta { display: none; }
+  #view-carta.active { display: block; }
+
+  .letter-paper {
+    background: var(--white);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid rgba(200,90,122,0.1);
+  }
+
+  .letter-header {
+    padding: 3rem 2rem 2rem;
+    text-align: center;
+    position: relative;
+  }
+
+  .letter-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(200,90,122,0.3), transparent);
+  }
+
+  .letter-from {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--rose);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  .letter-to {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  .letter-badge {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    background: var(--rose-light);
+    color: var(--rose-dark);
+    border-radius: 100px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-top: 0.75rem;
+  }
+
+  .letter-body {
+    padding: 2.5rem 2.5rem;
+  }
+
+  .letter-message {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    line-height: 1.9;
+    color: var(--ink);
+    white-space: pre-wrap;
+    font-style: italic;
+    position: relative;
+    padding-left: 1.5rem;
+    border-left: 3px solid var(--rose-light);
+  }
+
+  .letter-photos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .letter-photos img {
+    width: 100%;
+    border-radius: 12px;
+    object-fit: cover;
+    aspect-ratio: 4/3;
+    box-shadow: var(--shadow);
+  }
+
+  .letter-footer {
+    padding: 1.5rem 2.5rem 2.5rem;
+    text-align: right;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    color: var(--ink-muted);
+    font-size: 1rem;
+    border-top: 1px solid rgba(200,90,122,0.08);
+  }
+
+  .letter-music-bar {
+    background: linear-gradient(135deg, var(--rose-light) 0%, var(--gold-light) 100%);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--rose-dark);
+    font-weight: 500;
+  }
+
+  .music-play-btn {
+    width: 36px;
+    height: 36px;
+    background: var(--rose);
+    border-radius: 50%;
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+
+  .music-play-btn:hover { transform: scale(1.1); }
+
+  /* ── GALLERY VIEW ── */
+  #view-galeria .card {
+    background: var(--cream);
+    border: none;
+    box-shadow: none;
+    padding: 0.5rem 0;
+  }
+
+  .gallery-item {
+    background: var(--white);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(200,90,122,0.1);
+    margin-bottom: 0.75rem;
+    transition: all 0.2s;
+    cursor: pointer;
+  }
+
+  .gallery-item:hover {
+    box-shadow: var(--shadow);
+    border-color: rgba(200,90,122,0.25);
+    transform: translateY(-2px);
+  }
+
+  .gallery-item-left h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .gallery-item-left p {
+    font-size: 0.82rem;
+    color: var(--ink-muted);
+  }
+
+  .gallery-badge {
+    padding: 0.3rem 0.75rem;
+    border-radius: 100px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .badge-amor { background: rgba(200,90,122,0.12); color: var(--rose); }
+  .badge-cumple { background: var(--gold-light); color: #8a6a00; }
+  .badge-sorpresa { background: rgba(90,122,200,0.12); color: #3a5abc; }
+  .badge-amistad { background: rgba(90,200,122,0.12); color: #1a7a40; }
+
+  .gallery-item-right {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-shrink: 0;
+  }
+
+  .btn-delete {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(200,90,122,0.25);
+    background: transparent;
+    color: var(--rose);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .btn-delete:hover {
+    background: var(--rose);
+    color: white;
+    border-color: var(--rose);
+    transform: scale(1.1);
+  }
+
+  .confirm-delete {
+    background: #fff0f3;
+    border: 1.5px solid rgba(200,90,122,0.3);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .confirm-delete p { font-size: 0.88rem; color: var(--ink-muted); }
+  .confirm-delete strong { color: var(--rose); }
+
+  .confirm-row { display: flex; gap: 0.5rem; }
+
+  .btn-confirm-yes {
+    padding: 0.4rem 1rem;
+    background: var(--rose);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+
+  .btn-confirm-yes:hover { background: var(--rose-dark); }
+
+  .btn-confirm-no {
+    padding: 0.4rem 1rem;
+    background: transparent;
+    color: var(--ink-muted);
+    border: 1.5px solid rgba(0,0,0,0.12);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .btn-confirm-no:hover { background: var(--cream-dark); }
+
+  /* ── EMPTY STATE ── */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--ink-muted);
+  }
+
+  .empty-state .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+  .empty-state p { font-size: 0.95rem; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 100px;
+    font-size: 0.9rem;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 9999;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ── THEME OVERRIDES FOR LETTER ── */
+  .theme-amor .letter-header { background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 100%); }
+  .theme-cumple .letter-header { background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%); }
+  .theme-sorpresa .letter-header { background: linear-gradient(135deg, #e8eaf6 0%, #c5cae9 100%); }
+  .theme-amistad .letter-header { background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); }
+  .theme-nostalgia .letter-header { background: linear-gradient(135deg, #fbe9e7 0%, #ffccbc 100%); }
+
+  /* ── LOADING ── */
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(200,90,122,0.2);
+    border-top-color: var(--rose);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .search-input {
+    margin-bottom: 1.25rem;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    header h1 { font-size: 1.7rem; }
+    .letter-body { padding: 2rem 1.5rem; }
+    .letter-footer { padding: 1.25rem 1.5rem 2rem; }
+    .letter-message { font-size: 1rem; }
+    .letter-to { font-size: 1.7rem; }
+    .qr-wrapper { padding: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">💌</div>
+  <h1>Carta<span>Secreta</span></h1>
+  <p>Crea cartas digitales que se descubren con un código QR</p>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('crear')">✏️ Crear carta</button>
+  <button class="tab-btn" onclick="showTab('galeria')">📬 Mis cartas</button>
+  <button class="tab-btn" onclick="showTab('explorar')">🔍 Ver carta</button>
+</div>
+
+<main>
+
+  <!-- ══ CREAR ══ -->
+  <div id="view-crear" class="view active">
+
+    <div class="card">
+      <h2 class="card-title"><span class="icon">💝</span> Información de la carta</h2>
+
+      <div class="field-row">
+        <div>
+          <label>De parte de</label>
+          <input type="text" id="inp-de" placeholder="Tu nombre">
+        </div>
+        <div>
+          <label>Para</label>
+          <input type="text" id="inp-para" placeholder="Nombre del destinatario">
+        </div>
+      </div>
+
+      <label>Tipo de carta</label>
+      <div class="themes" id="theme-picker">
+        <button class="theme-btn active" data-theme="amor" onclick="selectTheme(this)">❤️ Amor</button>
+        <button class="theme-btn" data-theme="cumple" onclick="selectTheme(this)">🎂 Cumpleaños</button>
+        <button class="theme-btn" data-theme="sorpresa" onclick="selectTheme(this)">🎁 Sorpresa</button>
+        <button class="theme-btn" data-theme="amistad" onclick="selectTheme(this)">🌟 Amistad</button>
+        <button class="theme-btn" data-theme="nostalgia" onclick="selectTheme(this)">🌅 Nostalgia</button>
+      </div>
+
+      <label>Tu mensaje especial</label>
+      <textarea id="inp-mensaje" placeholder="Escribe aquí tu mensaje... puede ser tan largo y detallado como quieras 💫"></textarea>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title"><span class="icon">📸</span> Fotos (opcional)</h2>
+      <div class="preview-grid" id="photos-grid"></div>
+      <div class="media-zone" onclick="document.getElementById('inp-fotos').click()">
+        <div class="media-icon">🖼️</div>
+        <p>Toca para agregar fotos</p>
+        <p style="font-size:0.8rem; margin-top:0.25rem; color:#aaa;">PNG, JPG — máximo 5 fotos</p>
+      </div>
+      <input type="file" id="inp-fotos" accept="image/*" multiple style="display:none" onchange="addPhotos(this)">
+    </div>
+
+    <div class="card">
+      <h2 class="card-title"><span class="icon">🎵</span> Música de fondo (opcional)</h2>
+      <div class="music-options" id="music-picker">
+        <button class="music-btn active" data-music="" onclick="selectMusic(this)">🔇 Sin música</button>
+        <button class="music-btn" data-music="romantic" onclick="selectMusic(this)"><span class="note">🎻</span>Romántica</button>
+        <button class="music-btn" data-music="happy" onclick="selectMusic(this)"><span class="note">🎶</span>Feliz</button>
+        <button class="music-btn" data-music="chill" onclick="selectMusic(this)"><span class="note">🌊</span>Relajante</button>
+        <button class="music-btn" data-music="epic" onclick="selectMusic(this)"><span class="note">✨</span>Épica</button>
+        <button class="music-btn" data-music="jazz" onclick="selectMusic(this)"><span class="note">🎷</span>Jazz</button>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="crearCarta()">✨ Crear mi carta y generar QR</button>
+
+    <!-- RESULTADO -->
+    <div class="result-section" id="result-section">
+      <div class="qr-wrapper">
+        <h3>¡Tu carta está lista! 🎉</h3>
+        <p>Comparte este QR y quien lo escanee verá tu carta secreta</p>
+        <div id="qr-container"></div>
+        <div class="link-box" id="link-box" onclick="copiarLink()" title="Clic para copiar"></div>
+        <div class="action-row">
+          <button class="btn-secondary" onclick="copiarLink()">📋 Copiar enlace</button>
+          <button class="btn-secondary" onclick="descargarQR()">⬇️ Guardar QR</button>
+          <button class="btn-secondary" onclick="verCarta()">👁️ Ver carta</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /crear -->
+
+  <!-- ══ GALERÍA ══ -->
+  <div id="view-galeria" class="view">
+    <div class="card">
+      <h2 class="card-title"><span class="icon">📬</span> Cartas creadas</h2>
+      <input type="text" class="search-input" placeholder="🔍 Buscar por nombre..." oninput="filtrarCartas(this.value)">
+      <div id="gallery-list"></div>
+    </div>
+  </div>
+
+  <!-- ══ EXPLORAR / VER ══ -->
+  <div id="view-explorar" class="view">
+    <div class="card">
+      <h2 class="card-title"><span class="icon">🔍</span> Ver carta con código</h2>
+      <label>Ingresa el código de la carta</label>
+      <input type="text" id="inp-codigo" placeholder="Ej: ABC123" oninput="this.value = this.value.toUpperCase()">
+      <button class="btn-primary" onclick="buscarCarta()">💌 Abrir carta</button>
+    </div>
+    <div id="carta-display"></div>
+  </div>
+
+</main>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+let cartas = JSON.parse(localStorage.getItem('cartas') || '[]');
+let selectedTheme = 'amor';
+let selectedMusic = '';
+let photoData = [];
+let currentCartaId = null;
+
+// ── TABS ──
+function showTab(tab) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'galeria') renderGallery();
+}
+
+// ── THEME ──
+function selectTheme(btn) {
+  document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedTheme = btn.dataset.theme;
+}
+
+// ── MUSIC ──
+function selectMusic(btn) {
+  document.querySelectorAll('.music-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedMusic = btn.dataset.music;
+}
+
+// ── PHOTOS ──
+function addPhotos(input) {
+  const files = Array.from(input.files);
+  if (photoData.length + files.length > 5) {
+    toast('Máximo 5 fotos');
+    return;
+  }
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      photoData.push(e.target.result);
+      renderPhotoGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderPhotoGrid() {
+  const grid = document.getElementById('photos-grid');
+  grid.innerHTML = photoData.map((src, i) => `
+    <div class="preview-wrap">
+      <img src="${src}" class="preview-img" alt="foto ${i+1}">
+      <button class="remove-btn" onclick="removePhoto(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function removePhoto(i) {
+  photoData.splice(i, 1);
+  renderPhotoGrid();
+}
+
+// ── CREAR CARTA ──
+function crearCarta() {
+  const de = document.getElementById('inp-de').value.trim();
+  const para = document.getElementById('inp-para').value.trim();
+  const mensaje = document.getElementById('inp-mensaje').value.trim();
+
+  if (!de || !para || !mensaje) {
+    toast('Por favor completa: De, Para y el Mensaje 💕');
+    return;
+  }
+
+  const id = Math.random().toString(36).substr(2, 6).toUpperCase();
+  const carta = {
+    id,
+    de,
+    para,
+    mensaje,
+    theme: selectedTheme,
+    music: selectedMusic,
+    fotos: [...photoData],
+    fecha: new Date().toLocaleDateString('es-DO', { year:'numeric', month:'long', day:'numeric' })
+  };
+
+  cartas.push(carta);
+  localStorage.setItem('cartas', JSON.stringify(cartas));
+  currentCartaId = id;
+
+  // Generate QR
+  const link = window.location.href.split('?')[0] + '?carta=' + id;
+  document.getElementById('link-box').textContent = link;
+
+  const qrContainer = document.getElementById('qr-container');
+  qrContainer.innerHTML = '';
+  new QRCode(qrContainer, {
+    text: link,
+    width: 200,
+    height: 200,
+    colorDark: '#1a1015',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  document.getElementById('result-section').classList.add('show');
+  document.getElementById('result-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  toast('¡Carta creada! ID: ' + id + ' 🎉');
+}
+
+// ── COPIAR LINK ──
+function copiarLink() {
+  const link = document.getElementById('link-box').textContent;
+  navigator.clipboard.writeText(link).then(() => toast('¡Enlace copiado! 📋'));
+}
+
+// ── DESCARGAR QR ──
+function descargarQR() {
+  const canvas = document.querySelector('#qr-container canvas');
+  if (!canvas) { toast('Primero crea una carta'); return; }
+  const link = document.createElement('a');
+  link.download = 'QR-CartaSecreta-' + currentCartaId + '.png';
+  link.href = canvas.toDataURL();
+  link.click();
+  toast('QR guardado ⬇️');
+}
+
+// ── VER CARTA (desde botón) ──
+function verCarta() {
+  if (!currentCartaId) return;
+  mostrarCartaById(currentCartaId, 'carta-display-inline');
+  document.getElementById('carta-display-inline').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── GALLERY ──
+function renderGallery(filter='') {
+  const list = document.getElementById('gallery-list');
+  const filtered = cartas.filter(c =>
+    c.para.toLowerCase().includes(filter.toLowerCase()) ||
+    c.de.toLowerCase().includes(filter.toLowerCase())
+  );
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <p>${filter ? 'No hay cartas con ese nombre' : 'Aún no has creado cartas'}</p>
+    </div>`;
+    return;
+  }
+
+  const themeEmoji = { amor:'❤️', cumple:'🎂', sorpresa:'🎁', amistad:'🌟', nostalgia:'🌅' };
+
+  list.innerHTML = filtered.map(c => `
+    <div class="gallery-item" id="item-${c.id}" onclick="abrirCartaGaleria('${c.id}')">
+      <div class="gallery-item-left">
+        <h4>${themeEmoji[c.theme] || '💌'} Para ${c.para}</h4>
+        <p>De: ${c.de} · ${c.fecha} · ID: ${c.id}</p>
+      </div>
+      <div class="gallery-item-right">
+        <span class="gallery-badge badge-${c.theme}">${c.theme}</span>
+        <button class="btn-delete" title="Eliminar carta" onclick="pedirConfirmacion(event, '${c.id}')">🗑</button>
+      </div>
+    </div>
+    <div class="confirm-delete" id="confirm-${c.id}" style="display:none;">
+      <p>¿Eliminar la carta para <strong>${c.para}</strong>? Esta acción no se puede deshacer.</p>
+      <div class="confirm-row">
+        <button class="btn-confirm-yes" onclick="eliminarCarta('${c.id}')">Sí, eliminar</button>
+        <button class="btn-confirm-no" onclick="cancelarEliminar('${c.id}')">Cancelar</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filtrarCartas(val) { renderGallery(val); }
+
+function pedirConfirmacion(e, id) {
+  e.stopPropagation();
+  // Ocultar otras confirmaciones abiertas
+  document.querySelectorAll('.confirm-delete').forEach(el => el.style.display = 'none');
+  const confirm = document.getElementById('confirm-' + id);
+  confirm.style.display = 'flex';
+  confirm.style.justifyContent = 'space-between';
+  confirm.style.alignItems = 'center';
+}
+
+function cancelarEliminar(id) {
+  document.getElementById('confirm-' + id).style.display = 'none';
+}
+
+function eliminarCarta(id) {
+  cartas = cartas.filter(c => c.id !== id);
+  localStorage.setItem('cartas', JSON.stringify(cartas));
+  renderGallery(document.querySelector('.search-input') ? document.querySelector('.search-input').value : '');
+  toast('Carta eliminada 🗑️');
+}
+
+function abrirCartaGaleria(id) {
+  showTab('explorar');
+  document.querySelectorAll('.tab-btn')[2].classList.add('active');
+  document.querySelectorAll('.tab-btn')[1].classList.remove('active');
+  document.getElementById('inp-codigo').value = id;
+  buscarCarta(id);
+}
+
+// ── BUSCAR CARTA ──
+function buscarCarta(idOverride) {
+  const id = idOverride || document.getElementById('inp-codigo').value.trim().toUpperCase();
+  if (!id) { toast('Ingresa un código'); return; }
+  mostrarCartaById(id, 'carta-display');
+}
+
+// ── MOSTRAR CARTA ──
+function mostrarCartaById(id, containerId) {
+  const carta = cartas.find(c => c.id === id);
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  if (!carta) {
+    container.innerHTML = `<div class="card" style="text-align:center; padding: 2.5rem;">
+      <div style="font-size:2.5rem; margin-bottom:1rem;">🔍</div>
+      <p style="color:var(--ink-muted)">No encontramos una carta con el código <strong>${id}</strong></p>
+    </div>`;
+    return;
+  }
+
+  const musicLabels = { romantic:'🎻 Música romántica', happy:'🎶 Música feliz', chill:'🌊 Música relajante', epic:'✨ Música épica', jazz:'🎷 Jazz' };
+  const themeEmoji = { amor:'❤️', cumple:'🎂', sorpresa:'🎁', amistad:'🌟', nostalgia:'🌅' };
+
+  const photosHTML = carta.fotos.length ? `
+    <div class="letter-photos">
+      ${carta.fotos.map(src => `<img src="${src}" alt="foto">`).join('')}
+    </div>` : '';
+
+  const musicHTML = carta.music ? `
+    <div class="letter-music-bar">
+      <button class="music-play-btn" onclick="playMusic('${carta.music}', this)">▶</button>
+      <span>${musicLabels[carta.music] || ''}</span>
+    </div>` : '';
+
+  container.innerHTML = `
+    <div class="letter-paper">
+      ${musicHTML}
+      <div class="letter-header theme-${carta.theme}">
+        <div class="letter-from">Una carta especial de ${carta.de}</div>
+        <div class="letter-to">Para ${carta.para} ${themeEmoji[carta.theme] || ''}</div>
+        <div class="letter-badge">${carta.fecha}</div>
+      </div>
+      <div class="letter-body">
+        <div class="letter-message">${carta.mensaje}</div>
+        ${photosHTML}
+      </div>
+      <div class="letter-footer">Con cariño, ${carta.de} 🌹</div>
+    </div>
+  `;
+
+  container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── MUSIC ──
+let audioCtx = null;
+let currentSource = null;
+
+function playMusic(type, btn) {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (currentSource) {
+    currentSource.stop();
+    currentSource = null;
+    btn.textContent = '▶';
+    if (btn.dataset.playing === type) { btn.dataset.playing = ''; return; }
+  }
+
+  // Simple generative music (tones)
+  const notes = {
+    romantic: [261.63, 293.66, 329.63, 349.23, 392, 440],
+    happy: [523.25, 587.33, 659.25, 698.46, 784, 880],
+    chill: [220, 246.94, 261.63, 293.66, 329.63],
+    epic: [130.81, 164.81, 196, 261.63, 329.63],
+    jazz: [233.08, 261.63, 311.13, 369.99, 440, 493.88]
+  };
+
+  const freqs = notes[type] || notes.romantic;
+  btn.textContent = '⏸';
+  btn.dataset.playing = type;
+  playSequence(freqs, audioCtx, btn, type);
+}
+
+function playSequence(freqs, ctx, btn, type) {
+  let i = 0;
+  function playNext() {
+    if (!btn.dataset.playing) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = freqs[i % freqs.length];
+    osc.type = type === 'epic' ? 'square' : type === 'jazz' ? 'triangle' : 'sine';
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.8);
+    currentSource = osc;
+    osc.onended = () => {
+      i++;
+      if (btn.dataset.playing) setTimeout(playNext, 200);
+    };
+  }
+  playNext();
+}
+
+// ── TOAST ──
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── URL PARAMS (abrir carta por QR) ──
+function checkURLparams() {
+  const params = new URLSearchParams(window.location.search);
+  const cartaId = params.get('carta');
+  if (cartaId) {
+    // Auto-open the letter
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+    const explorar = document.getElementById('view-explorar');
+    explorar.classList.add('active');
+    document.querySelectorAll('.tab-btn')[2].classList.add('active');
+
+    document.getElementById('inp-codigo').value = cartaId.toUpperCase();
+    setTimeout(() => buscarCarta(cartaId.toUpperCase()), 300);
+  }
+}
+
+// ── INLINE DISPLAY PLACEHOLDER ──
+const inlinePlaceholder = document.createElement('div');
+inlinePlaceholder.id = 'carta-display-inline';
+document.querySelector('#view-crear').appendChild(inlinePlaceholder);
+
+// ── INIT ──
+checkURLparams();
+renderGallery();
+</script>
+</body>
+</html>
